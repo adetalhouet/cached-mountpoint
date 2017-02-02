@@ -7,20 +7,24 @@ One of the enhancement would be to create an API to put models into the appropri
 Here is a small postman collection to play with this example: https://www.getpostman.com/collections/e8c28a7d1e3354e5f71e
 
 ## Setup the cache repository with the models to dynamically load
-Create a folder under `cache/cached-mountpoint` and put there the yang models you'll dynamically mount when required.
+Create a folder under `{KARAF_HOME}/cache/cached-mountpoint` and put there the yang models you'll dynamically mount when required.
 The files has to follow this convention: moduleName@revisionDate.yang
+
+For our example, will we create the folder name `cached-mountpoint-1` and put the car.yang in there.
 
 ## Create the cached mount point
 
 * The mount point will be called `testCachedMountPoint`.
-* Specify the folder name you created in the previous step, here `testCachedMountPoint`.
-* Add the capabilities under `yang-module-capabilities`, as shown in the example bellow. Note, you'll have to make sure that the capabilities you provide in the cache/cached-mountpoint/XXX directory are able to resolved their imports.
+* Specify the folder name you created in the previous step, here `cached-mountpoint-1`.
+* Add the capabilities under `yang-module-capabilities`, as shown in the example bellow. 
+
+Note, you'll have to make sure that the capabilities you provide in the cache/cached-mountpoint/... directory are able to resolved their imports.
 
 ```
 curl -X PUT -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Accept: application/json" -H "Content-Type: application/xml" -H  -d 
 '<node xmlns="urn:TBD:params:xml:ns:yang:network-topology">
 	<node-id>testCachedMountPoint</node-id>
-	<schema-cache-directory xmlns="urn:opendaylight:params:xml:ns:yang:cached-mountpoint">testCachedMountPoint</schema-cache-directory>
+	<schema-cache-directory xmlns="urn:opendaylight:params:xml:ns:yang:cached-mountpoint">cached-mountpoint-1</schema-cache-directory>
 	<yang-module-capabilities xmlns="urn:opendaylight:params:xml:ns:yang:cached-mountpoint">
 		<capability>urn:opendaylight:car?module=car&amp;revision=2016-06-09</capability>
    </yang-module-capabilities>
