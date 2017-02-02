@@ -45,3 +45,9 @@ curl -X PUT -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "Content-Type: applica
 ```
 curl -X GET -H "http://localhost:8181/restconf/config/network-topology:network-topology/topology/cached-mountpoint/node/testCachedMountPoint/yang-ext:mount/car:car-info"
 ```
+
+# Credits
+Code from those two repos was used as base:
+
+* https://github.com/CiscoDevNet/opendaylight-bootcamps/tree/master/2015-11-Princeton/caching-mountpoint
+* https://github.com/marosmars/caching-mountpoint
