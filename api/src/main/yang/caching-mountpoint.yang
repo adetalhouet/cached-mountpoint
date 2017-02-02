@@ -1,0 +1,49 @@
+module cached-mountpoint {
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:cached-mountpoint";
+    prefix "cached-mountpoint";
+
+    import network-topology { prefix nt; revision-date 2013-10-21; }
+    import yang-ext { prefix ext; revision-date "2013-07-09";}
+
+    revision "2017-02-01" {
+        description "Initial revision of cached-mountpoint model";
+    }
+
+    grouping cached-mountpoint-capabilities {
+        container yang-module-capabilities {
+            config true;
+            leaf-list capability {
+                type string;
+                description "Set a list of capabilities to override capabilities provided in device's hello message.
+                             Can be used for devices that do not report any yang modules in their hello message";
+            }
+        }
+    }
+
+    grouping cached-mountpoint-schema-storage {
+        leaf schema-cache-directory {
+            config true;
+            type string;
+            default "vnf";
+            description "The destination schema repository for yang files relative to the cache directory.  This may be specified per netconf mount
+                         so that the loaded yang files are stored to a distinct directory to avoid potential conflict.";
+        }
+    }
+
+    grouping cached-mounpoint-node-fields {
+        uses cached-mountpoint-capabilities;
+        uses cached-mountpoint-schema-storage;
+    }
+
+    augment "/nt:network-topology/nt:topology/nt:topology-types" {
+        container cached-mountpoint {
+        }
+     }
+
+    augment "/nt:network-topology/nt:topology/nt:node" {
+        when "../../nt:topology-types/cached-mountpoint";
+        ext:augment-identifier "cached-mounpoint-node";
+        uses cached-mounpoint-node-fields;
+    }
+}

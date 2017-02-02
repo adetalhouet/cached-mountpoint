@@ -1,0 +1,21 @@
+// Contents of "car"
+module car {
+    namespace "urn:opendaylight:car";
+    prefix "car";
+
+
+    revision 2016-06-09 {
+        description "Initial revision";
+    }
+
+    container car-info {
+        description "Define some information about the car";
+        leaf max-speed {
+            type uint8;
+            description "Car maximum speed";
+        }
+        leaf car-id {
+            type uint8;
+        }
+    }
+}

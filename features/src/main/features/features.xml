@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- vi: set et smarttab sw=4 tabstop=4: -->
+<!--
+Copyright
+
+This program and the accompanying materials are made available under the
+terms of the Eclipse Public License v1.0 which accompanies this distribution,
+and is available at http://www.eclipse.org/legal/epl-v10.html
+-->
+<features name="odl-cached-mountpoint-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://karaf.apache.org/xmlns/features/v1.2.0 http://karaf.apache.org/xmlns/features/v1.2.0">
+  <repository>mvn:org.opendaylight.mdsal.model/features-mdsal-model/{{VERSION}}/xml/features</repository>
+  <repository>mvn:org.opendaylight.controller/features-mdsal/{{VERSION}}/xml/features</repository>
+  <repository>mvn:org.opendaylight.netconf/features-restconf/{{VERSION}}/xml/features</repository>
+  <repository>mvn:org.opendaylight.netconf/features-netconf-connector/{{VERSION}}/xml/features</repository>
+
+  <feature name='odl-cached-mountpoint-api' version='${project.version}' description='OpenDaylight :: cached-mountpoint :: api'>
+    <feature version='${mdsal.model.version}'>odl-mdsal-models</feature>
+    <bundle>mvn:org.opendaylight.mdsal/cached-mountpoint-api/${project.version}</bundle>
+  </feature>
+  <feature name='odl-cached-mountpoint' version='${project.version}' description='OpenDaylight :: cached-mountpoint'>
+    <feature version='${mdsal.version}'>odl-mdsal-broker</feature>
+    <feature version='${netconf.version}'>odl-netconf-topology</feature>
+    <feature version='${project.version}'>odl-cached-mountpoint-api</feature>
+    <bundle>mvn:org.opendaylight.mdsal/cached-mountpoint-impl/${project.version}</bundle>
+  </feature>
+  <feature name='odl-cached-mountpoint-rest' version='${project.version}' description='OpenDaylight :: cached-mountpoint :: REST'>
+    <feature version="${project.version}">odl-cached-mountpoint</feature>
+    <feature version="${restconf.version}">odl-restconf</feature>
+  </feature>
+  <feature name='odl-cached-mountpoint-ui' version='${project.version}' description='OpenDaylight :: cached-mountpoint :: UI'>
+    <feature version="${project.version}">odl-cached-mountpoint-rest</feature>
+    <feature version="${mdsal.version}">odl-mdsal-apidocs</feature>
+    <feature version="${mdsal.version}">odl-mdsal-xsql</feature>
+  </feature>
+
+</features>
