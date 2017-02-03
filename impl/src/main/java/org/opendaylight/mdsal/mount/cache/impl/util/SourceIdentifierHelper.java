@@ -5,7 +5,7 @@
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
-package org.opendaylight.mdsal.mount.cache.impl;
+package org.opendaylight.mdsal.mount.cache.impl.util;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -14,7 +14,6 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import java.net.URI;
 import java.util.Collection;
@@ -67,9 +66,7 @@ public final class SourceIdentifierHelper {
         }
     }
 
-    static Collection<SourceIdentifier> fromStrings(final Collection<String> capabilities) {
-
-        final Collection<QName> moduleBasedCaps = Lists.newArrayList();
+    public static Collection<SourceIdentifier> fromStrings(final Collection<String> capabilities, final Collection<QName> moduleBasedCaps) {
 
         final Set<String> nonModuleCaps = Sets.newHashSet(capabilities);
 

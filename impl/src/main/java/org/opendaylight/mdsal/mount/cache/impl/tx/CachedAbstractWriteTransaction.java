@@ -8,8 +8,6 @@
 package org.opendaylight.mdsal.mount.cache.impl.tx;
 
 import com.google.common.base.Preconditions;
-import org.opendaylight.mdsal.mount.cache.impl.InMemoryDeviceDOMDataStorePool;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 
 /**
@@ -17,15 +15,12 @@ import org.opendaylight.yangtools.yang.model.api.SchemaContext;
  */
 abstract class CachedAbstractWriteTransaction {
 
-    NodeId nodeId;
+    String nodeId;
     SchemaContext schemaContext;
-    InMemoryDeviceDOMDataStorePool pool;
 
-    CachedAbstractWriteTransaction(final NodeId nodeId,
-                                   final SchemaContext schemaContext,
-                                   final InMemoryDeviceDOMDataStorePool pool) {
-        this.nodeId = nodeId;
+    CachedAbstractWriteTransaction(final String nodeId,
+                                   final SchemaContext schemaContext) {
+        this.nodeId = Preconditions.checkNotNull(nodeId);
         this.schemaContext = Preconditions.checkNotNull(schemaContext);
-        this.pool = Preconditions.checkNotNull(pool);
     }
 }

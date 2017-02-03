@@ -7,10 +7,13 @@
  */
 package org.opendaylight.mdsal.mount.cache.impl;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.CheckedFuture;
 import java.io.File;
 import java.util.Collection;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
+import java.util.List;
+import org.opendaylight.mdsal.mount.cache.impl.util.SourceIdentifierHelper;
+import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaContextFactory;
 import org.opendaylight.yangtools.yang.model.repo.api.SchemaResolutionException;
@@ -29,17 +32,19 @@ class CachedSchemaRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedSchemaRepository.class);
 
-    private static final String DEFAULT_CACHED_MOUNT_POINT_DIRECTORY = "cache/cached-mountpoint";
+    public static final String DEFAULT_CACHED_MOUNT_POINT_DIRECTORY = "cache/cached-mountpoint";
 
     private SchemaContextFactory schemaContextFactory;
     private SchemaContext schemaContext;
+    private List<QName> qNameSet;
 
     private CachedSchemaRepository(final SchemaContextFactory schemaContextFactory, final Collection<String> caps) {
         this.schemaContextFactory = schemaContextFactory;
-        this.schemaContext = setSchemaContext(caps);
+        this.qNameSet = Lists.newArrayList();
+        this.schemaContext = setSchemaContext(caps, qNameSet);
     }
 
-    static CachedSchemaRepository newInstance(final NodeId nodeId, final String cacheDirectoryName, final Collection<String> caps) {
+    static CachedSchemaRepository newInstance(final String nodeId, final String cacheDirectoryName, final Collection<String> caps) {
 
         final SharedSchemaRepository schemaRegistry = new SharedSchemaRepository(cacheDirectoryName);
         final SchemaContextFactory schemaContextFactory = schemaRegistry.createSchemaContextFactory(SchemaSourceFilter.ALWAYS_ACCEPT);
@@ -50,14 +55,14 @@ class CachedSchemaRepository {
         final FilesystemSchemaSourceCache filesystemSchemaSourceCache = new FilesystemSchemaSourceCache<>(schemaRegistry,
                 YangTextSchemaSource.class, new File(relativeSchemaCacheDirectory));
         schemaRegistry.registerSchemaSourceListener(filesystemSchemaSourceCache);
-        LOG.info("Cached mount point {} will use schema cache directory {} ", nodeId.getValue(), relativeSchemaCacheDirectory);
+        LOG.info("{}: Cached mount point will use schema cache directory {} ", nodeId, relativeSchemaCacheDirectory);
 
         return new CachedSchemaRepository(schemaContextFactory, caps);
     }
 
-    private SchemaContext setSchemaContext(final Collection<String> caps) {
+    private SchemaContext setSchemaContext(final Collection<String> caps, final Collection<QName> qNameSet) {
         final CheckedFuture<SchemaContext, SchemaResolutionException> schemaBuilderFuture =
-                schemaContextFactory.createSchemaContext(SourceIdentifierHelper.fromStrings(caps));
+                schemaContextFactory.createSchemaContext(SourceIdentifierHelper.fromStrings(caps, qNameSet));
         try {
             return schemaBuilderFuture.checkedGet();
         } catch (SchemaResolutionException exception) {
@@ -68,5 +73,9 @@ class CachedSchemaRepository {
 
     SchemaContext getSchemaContext() {
         return this.schemaContext;
+    }
+
+    List<QName> qNames() {
+        return this.qNameSet;
     }
 }

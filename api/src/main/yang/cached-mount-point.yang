@@ -1,0 +1,76 @@
+module cached-mount-point {
+    yang-version 1;
+    namespace "urn:opendaylight:params:xml:ns:yang:cached-mount-point";
+    prefix "cached-mount-point";
+
+    import network-topology { prefix nt; revision-date 2013-10-21; }
+    import yang-ext { prefix ext; revision-date "2013-07-09";}
+
+    revision "2017-02-01" {
+        description "Initial revision of cached-mount-point model";
+    }
+
+    grouping cached-mount-point-capabilities {
+        container yang-module-capabilities {
+            config true;
+            leaf-list capability {
+                type string;
+                description "Set a list of capabilities to override capabilities provided in device's hello message.
+                             Can be used for devices that do not report any yang modules in their hello message";
+            }
+        }
+    }
+
+    grouping cached-mount-point-schema-storage {
+        leaf schema-cache-directory {
+            config true;
+            type string;
+            default "default";
+            description "The destination schema repository for yang files relative to the cache directory.
+                         This may be specified per netconf mount so that the loaded yang files are stored
+                         to a distinct directory to avoid potential conflict.";
+        }
+    }
+
+    grouping cached-mount-point-node-fields {
+        uses cached-mount-point-capabilities;
+        uses cached-mount-point-schema-storage;
+    }
+
+    augment "/nt:network-topology/nt:topology/nt:topology-types" {
+        container cached-mount-point {
+        }
+     }
+
+    augment "/nt:network-topology/nt:topology/nt:node" {
+        when "../../nt:topology-types/cached-mount-point";
+        ext:augment-identifier "cached-mount-point-node";
+        uses cached-mount-point-node-fields;
+    }
+
+    rpc load-models {
+        input {
+            leaf path {
+                type string;
+                description "The full path to the folder containing the models, or the full path to the model itself
+                             if there is only one to load.";
+            }
+            uses cached-mount-point-schema-storage;
+        }
+        output {
+            leaf status {
+                type enumeration {
+                    enum CREATED;
+                    enum ALREADY_EXIST;
+                    enum ERROR;
+                }
+                description "Define the status of the operation.";
+            }
+            leaf error-message {
+                when "../result = ERROR";
+                type string;
+                description "If the operation failed, provide the message thrown by the underlying IOException.";
+            }
+        }
+    }
+}

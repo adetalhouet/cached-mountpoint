@@ -16,9 +16,6 @@
     <reference id="conversionCodec"
                interface="org.opendaylight.mdsal.binding.dom.codec.api.BindingNormalizedNodeSerializer"/>
 
-    <bean id="inMemoryDeviceDOMDataStorePool"
-          class="org.opendaylight.mdsal.mount.cache.impl.InMemoryDeviceDOMDataStorePool"/>
-
     <bean id="cachedMountPointTology"
           class="org.opendaylight.mdsal.mount.cache.impl.CachedMountPointTopology"
           init-method="init"
@@ -26,12 +23,14 @@
         <argument ref="databroker"/>
         <argument ref="domMountPointService"/>
         <argument ref="conversionCodec"/>
-        <argument ref="inMemoryDeviceDOMDataStorePool"/>
     </bean>
 
     <bean id="cachedMountPointListener"
           class="org.opendaylight.mdsal.mount.cache.impl.CachedMountPointListener">
         <argument ref="domMountPointService"/>
     </bean>
+
+    <bean id="cachedMountPointService" class="org.opendaylight.mdsal.mount.cache.impl.CachedMountPointRpcService"/>
+    <odl:rpc-implementation ref="cachedMountPointService"/>
 
 </blueprint>

@@ -17,10 +17,7 @@ import javax.annotation.Nullable;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.ReadFailedException;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataReadOnlyTransaction;
-import org.opendaylight.controller.md.sal.dom.store.impl.InMemoryDOMDataStore;
 import org.opendaylight.controller.sal.core.spi.data.DOMStoreReadTransaction;
-import org.opendaylight.mdsal.mount.cache.impl.InMemoryDeviceDOMDataStorePool;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
@@ -34,36 +31,34 @@ public class CachedDOMReadOnlyTransaction extends CachedAbstractWriteTransaction
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedDOMReadOnlyTransaction.class);
 
-    private DOMStoreReadTransaction readTransaction;
+    private final DOMStoreReadTransaction readTransaction;
 
-    CachedDOMReadOnlyTransaction(final NodeId nodeId,
+    public CachedDOMReadOnlyTransaction(final String nodeId,
                                  final SchemaContext schemaContext,
-                                 final InMemoryDeviceDOMDataStorePool pool) {
-        super(nodeId, schemaContext, pool);
+                                 final DOMStoreReadTransaction readTransaction) {
+        super(nodeId, schemaContext);
+        this.readTransaction = Preconditions.checkNotNull(readTransaction);
     }
 
     @Override
     public void close() {
         if (readTransaction != null) {
             readTransaction.close();
-            readTransaction = null;
         }
     }
 
     @Override
     public CheckedFuture<Optional<NormalizedNode<?, ?>>, ReadFailedException> read(LogicalDatastoreType store, YangInstanceIdentifier path) {
 
-        LOG.debug("{}: Read store={} path={}", nodeId.getValue(), store, path);
+        LOG.debug("{}: Read store={} path={}", nodeId, store, path);
 
         try {
-            final InMemoryDOMDataStore dbStore = pool.getInMemoryDOMDataStore(path, schemaContext, store);
-            Preconditions.checkState(readTransaction == null, "%s: A CachedDOMReadOnlyTransaction is already open" + nodeId.getValue());
-            readTransaction = dbStore.newReadOnlyTransaction();
+            Preconditions.checkState(readTransaction != null, "%s: DOMStoreReadTransaction is null" + nodeId);
 
             return readTransaction.read(path);
 
         } catch (Exception e) {
-            LOG.error("{}: Failed to read store={} for path={}", nodeId.getValue(), store, path);
+            LOG.error("{}: Failed to read store={} for path={}", nodeId, store, path);
 
             return null;
         }
@@ -71,7 +66,7 @@ public class CachedDOMReadOnlyTransaction extends CachedAbstractWriteTransaction
 
     @Override
     public CheckedFuture<Boolean, ReadFailedException> exists(LogicalDatastoreType store, YangInstanceIdentifier path) {
-        LOG.debug("{}: Exists store={} path={}", nodeId.getValue(), store, path);
+        LOG.debug("{}: Exists store={} path={}", nodeId, store, path);
 
         final CheckedFuture<Optional<NormalizedNode<?, ?>>, ReadFailedException> read = read(
                 store, path);
@@ -89,7 +84,7 @@ public class CachedDOMReadOnlyTransaction extends CachedAbstractWriteTransaction
             @Nullable
             @Override
             public ReadFailedException apply(final Exception e) {
-                return new ReadFailedException("%s: Unable to read from cache" + nodeId.getValue(), e);
+                return new ReadFailedException("%s: Unable to read from cache" + nodeId, e);
             }
         });
     }

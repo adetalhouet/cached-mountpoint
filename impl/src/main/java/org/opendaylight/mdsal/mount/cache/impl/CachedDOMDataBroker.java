@@ -5,7 +5,7 @@
  * terms of the Eclipse Public License v1.0 which accompanies this distribution,
  * and is available at http://www.eclipse.org/legal/epl-v10.html
  */
-package org.opendaylight.mdsal.mount.cache.impl.tx;
+package org.opendaylight.mdsal.mount.cache.impl;
 
 import java.util.Collections;
 import java.util.Map;
@@ -18,10 +18,15 @@ import org.opendaylight.controller.md.sal.dom.api.DOMDataBrokerExtension;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataChangeListener;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataReadOnlyTransaction;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataReadWriteTransaction;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeChangeListener;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeChangeService;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeIdentifier;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataWriteTransaction;
 import org.opendaylight.controller.md.sal.dom.api.DOMTransactionChain;
-import org.opendaylight.mdsal.mount.cache.impl.InMemoryDeviceDOMDataStorePool;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
+import org.opendaylight.controller.md.sal.dom.store.impl.InMemoryDOMDataStore;
+import org.opendaylight.mdsal.mount.cache.impl.tx.CachedDOMReadOnlyTransaction;
+import org.opendaylight.mdsal.mount.cache.impl.tx.CachedDOMReadWriteTransaction;
+import org.opendaylight.mdsal.mount.cache.impl.tx.CachedDOMWriteTransaction;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
@@ -31,31 +36,29 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by adetalhouet on 2017-02-02.
  */
-public class CachedDOMDataBroker implements DOMDataBroker {
+public class CachedDOMDataBroker implements DOMDataBroker, DOMDataTreeChangeService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedDOMDataBroker.class);
 
-    private final NodeId nodeId;
+    private final String nodeId;
     private final SchemaContext schemaContext;
-    private final InMemoryDeviceDOMDataStorePool pool;
+    private final InMemoryDOMDataStore inMemoryDOMDataStore;
     private final Executor clientFutureCallbackExecutor;
 
-    public CachedDOMDataBroker(final NodeId nodeId,
+    public CachedDOMDataBroker(final String nodeId,
                                final SchemaContext schemaContext,
-                               final InMemoryDeviceDOMDataStorePool pool,
+                               final InMemoryDOMDataStore inMemoryDOMDataStore,
                                final Executor clientFutureCallbackExecutor) {
-        LOG.info("{}: Create CachedDOMDataBroker instance for schemaContext={}",nodeId.getValue(), schemaContext);
+        LOG.info("{}: Create CachedDOMDataBroker instance for schemaContext={}", nodeId, schemaContext);
         this.nodeId = nodeId;
         this.schemaContext = schemaContext;
-        this.pool = pool;
+        this.inMemoryDOMDataStore = inMemoryDOMDataStore;
         this.clientFutureCallbackExecutor = clientFutureCallbackExecutor;
     }
 
-
-
     @Override
     public DOMDataReadOnlyTransaction newReadOnlyTransaction() {
-        return new CachedDOMReadOnlyTransaction(nodeId, schemaContext, pool);
+        return new CachedDOMReadOnlyTransaction(nodeId, schemaContext, inMemoryDOMDataStore.newReadOnlyTransaction());
     }
 
     @Override
@@ -65,14 +68,15 @@ public class CachedDOMDataBroker implements DOMDataBroker {
 
     @Override
     public DOMDataWriteTransaction newWriteOnlyTransaction() {
-        return new CachedDOMWriteTransaction(nodeId, schemaContext, pool, clientFutureCallbackExecutor);
+        return new CachedDOMWriteTransaction(nodeId, schemaContext, inMemoryDOMDataStore.newWriteOnlyTransaction(),
+                clientFutureCallbackExecutor);
     }
 
     @Override
     public ListenerRegistration<DOMDataChangeListener> registerDataChangeListener(
             final LogicalDatastoreType store, final YangInstanceIdentifier path, final DOMDataChangeListener listener,
             final DataChangeScope triggeringScope) {
-        throw new UnsupportedOperationException("Data change listeners not supported for mount point");
+        return inMemoryDOMDataStore.registerChangeListener(path, listener, triggeringScope);
     }
 
     @Override
@@ -82,7 +86,14 @@ public class CachedDOMDataBroker implements DOMDataBroker {
 
     @Nonnull
     @Override
+    public <L extends DOMDataTreeChangeListener> ListenerRegistration<L> registerDataTreeChangeListener(@Nonnull DOMDataTreeIdentifier domDataTreeIdentifier, @Nonnull L l) {
+        return inMemoryDOMDataStore.registerTreeChangeListener(domDataTreeIdentifier.getRootIdentifier(), l);
+    }
+
+    @Nonnull
+    @Override
     public Map<Class<? extends DOMDataBrokerExtension>, DOMDataBrokerExtension> getSupportedExtensions() {
         return Collections.emptyMap();
     }
+
 }

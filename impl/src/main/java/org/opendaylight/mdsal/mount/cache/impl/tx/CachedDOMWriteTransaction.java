@@ -22,11 +22,8 @@ import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.common.api.data.TransactionCommitFailedException;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataWriteTransaction;
 import org.opendaylight.controller.md.sal.dom.broker.impl.TransactionCommitFailedExceptionMapper;
-import org.opendaylight.controller.md.sal.dom.store.impl.InMemoryDOMDataStore;
 import org.opendaylight.controller.sal.core.spi.data.DOMStoreThreePhaseCommitCohort;
 import org.opendaylight.controller.sal.core.spi.data.DOMStoreWriteTransaction;
-import org.opendaylight.mdsal.mount.cache.impl.InMemoryDeviceDOMDataStorePool;
-import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.NodeId;
 import org.opendaylight.yangtools.util.concurrent.MappingCheckedFuture;
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
@@ -49,22 +46,21 @@ public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction im
 
     private final Executor clientFutureCallbackExecutor;
 
-    private DOMStoreWriteTransaction writeTransaction;
+    private final DOMStoreWriteTransaction writeTransaction;
 
-    CachedDOMWriteTransaction(final NodeId nodeId,
+    public CachedDOMWriteTransaction(final String nodeId,
                               final SchemaContext schemaContext,
-                              final InMemoryDeviceDOMDataStorePool pool,
+                              final DOMStoreWriteTransaction writeTransaction,
                               final Executor clientFutureCallbackExecutor) {
-        super(nodeId, schemaContext, pool);
+        super(nodeId, schemaContext);
         this.clientFutureCallbackExecutor = clientFutureCallbackExecutor;
-        writeTransaction = null;
+        this.writeTransaction = writeTransaction;
     }
 
     @Override
     public boolean cancel() {
         if (writeTransaction != null) {
             writeTransaction.close();
-            writeTransaction = null;
         }
         return false;
     }
@@ -73,10 +69,8 @@ public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction im
     public CheckedFuture<Void, TransactionCommitFailedException> submit() {
         DOMStoreThreePhaseCommitCohort cohort = writeTransaction.ready();
 
-
-        Preconditions.checkArgument(writeTransaction != null, "%s: Transaction must not be null." + nodeId.getValue());
-        Preconditions.checkArgument(cohort != null, "%s: Cohort must not be null." + nodeId.getValue());
-        LOG.debug("{}: Tx: {} is submitted for execution.", nodeId.getValue(), writeTransaction.getIdentifier());
+        Preconditions.checkArgument(cohort != null, "%s: Cohort must not be null." + nodeId);
+        LOG.debug("{}: Tx: {} is submitted for execution.", nodeId, writeTransaction.getIdentifier());
 
         final AsyncNotifyingSettableFuture clientSubmitFuture =
                 new AsyncNotifyingSettableFuture(clientFutureCallbackExecutor);
@@ -99,7 +93,7 @@ public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction im
                     handleException(clientSubmitFuture, transaction, cohort,
                             CAN_COMMIT, TransactionCommitFailedExceptionMapper.CAN_COMMIT_ERROR_MAPPER,
                             new TransactionCommitFailedException(
-                                    "%s: Can Commit failed, no detailed cause available." + nodeId.getValue()));
+                                    "%s: Can Commit failed, no detailed cause available." + nodeId));
                 } else {
                     // All cohorts completed successfully - we can move on to the preCommit phase
                     doPreCommit(clientSubmitFuture, transaction, cohort);
@@ -173,50 +167,41 @@ public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction im
 
     @Override
     public void delete(LogicalDatastoreType store, YangInstanceIdentifier path) {
-        LOG.debug("{}: Delete store={} for path={}", nodeId.getValue(), store, path);
+        LOG.debug("{}: Delete store={} for path={}", nodeId, store, path);
 
-        Preconditions.checkState(writeTransaction == null);
-
-        final InMemoryDOMDataStore dbStore = pool.getInMemoryDOMDataStore(path, schemaContext, store);
+        Preconditions.checkState(writeTransaction != null);
 
         try {
-            writeTransaction = dbStore.newWriteOnlyTransaction();
             writeTransaction.delete(path);
         } catch (Exception e) {
-            LOG.error("{}: Failed to delete store={} for path={}", nodeId.getValue(), store, path);
+            LOG.error("{}: Failed to delete store={} for path={}", nodeId, store, path);
         }
 
     }
 
     @Override
     public void put(LogicalDatastoreType store, YangInstanceIdentifier path, NormalizedNode<?, ?> data) {
-        LOG.debug("{}: Put data={} in store={} for path={}", nodeId.getValue(), data, store, path);
+        LOG.debug("{}: Put data={} in store={} for path={}", nodeId, data, store, path);
 
-        Preconditions.checkState(writeTransaction == null);
-
-        final InMemoryDOMDataStore dbStore = pool.getInMemoryDOMDataStore(path, schemaContext, store);
+        Preconditions.checkState(writeTransaction != null);
 
         try {
-            writeTransaction = dbStore.newWriteOnlyTransaction();
             writeTransaction.write(path, data);
         } catch (Exception e) {
-            LOG.error("{}: Failed to put data={} in store={} for path={}", nodeId.getValue(), data, store, path);
+            LOG.error("{}: Failed to put data={} in store={} for path={}", nodeId, data, store, path);
         }
     }
 
     @Override
     public void merge(LogicalDatastoreType store, YangInstanceIdentifier path, NormalizedNode<?, ?> data) {
-        LOG.debug("{}: Merge data={} in store={} for path={}", nodeId.getValue(), data, store, path);
+        LOG.debug("{}: Merge data={} in store={} for path={}", nodeId, data, store, path);
 
-        Preconditions.checkState(writeTransaction == null);
-
-        final InMemoryDOMDataStore dbStore = pool.getInMemoryDOMDataStore(path, schemaContext, store);
+        Preconditions.checkState(writeTransaction != null);
 
         try {
-            writeTransaction = dbStore.newWriteOnlyTransaction();
             writeTransaction.merge(path, data);
         } catch (Exception e) {
-            LOG.error("{}: Failed to Merge data={} in store={} for path={}", nodeId.getValue(), data, store, path);
+            LOG.error("{}: Failed to Merge data={} in store={} for path={}", nodeId, data, store, path);
         }
     }
 
