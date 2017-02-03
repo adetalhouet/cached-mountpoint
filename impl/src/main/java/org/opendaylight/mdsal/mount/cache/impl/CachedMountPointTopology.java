@@ -26,6 +26,7 @@ import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataBroker;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeIdentifier;
+import org.opendaylight.controller.md.sal.dom.api.DOMMountPoint;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPointService;
 import org.opendaylight.controller.md.sal.dom.store.impl.InMemoryDOMDataStore;
 import org.opendaylight.mdsal.binding.dom.codec.api.BindingNormalizedNodeSerializer;
@@ -35,6 +36,7 @@ import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.Node;
 import org.opendaylight.yang.gen.v1.urn.tbd.params.xml.ns.yang.network.topology.rev131021.network.topology.topology.NodeKey;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
+import org.opendaylight.yangtools.concepts.ObjectRegistration;
 import org.opendaylight.yangtools.util.concurrent.SpecialExecutors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
@@ -143,14 +145,13 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
 //            final Collection<ListenerRegistration<CachedDOMDataTreeChangeListener>> regs =
 //                    registerDataTreeChangeListener(nodeId, cachedSchemaRepository.qNames(), domDataBroker);
 
-            final CachedMountPointId mountPointId = new CachedMountPointId(nodeId, cachedSchemaRepository, inMemoryDOMDataStore);
-            cachedMountPoints.put(nodeId, mountPointId);
-
             final DOMMountPointService.DOMMountPointBuilder cachedMountPointBuilder = service.createMountPoint(rootNode);
             cachedMountPointBuilder.addService(DOMDataBroker.class, domDataBroker);
             cachedMountPointBuilder.addInitialSchemaContext(schemaContext);
-            // TODO save & close the reg
-            cachedMountPointBuilder.register();
+            final ObjectRegistration<DOMMountPoint> reg = cachedMountPointBuilder.register();
+
+            final CachedMountPointId mountPointId = new CachedMountPointId(nodeId, cachedSchemaRepository, inMemoryDOMDataStore, reg);
+            cachedMountPoints.put(nodeId, mountPointId);
         } else {
             LOG.warn("{}: Mount point already exist", nodeId);
         }
@@ -186,6 +187,13 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
     }
 
     private void deleteCachedMountPoint(String nodeId) {
-        // TODO delete mount point
+        final CachedMountPointId cachedMountPoint = cachedMountPoints.get(nodeId);
+        if (cachedMountPoint != null) {
+            try {
+                cachedMountPoint.getRegistration().close();
+            } catch (Exception e) {
+                LOG.error("{}: Failed to close mount point", nodeId);
+            }
+        }
     }
 }
