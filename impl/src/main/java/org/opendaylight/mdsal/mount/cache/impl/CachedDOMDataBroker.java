@@ -29,7 +29,6 @@ import org.opendaylight.mdsal.mount.cache.impl.tx.CachedDOMReadWriteTransaction;
 import org.opendaylight.mdsal.mount.cache.impl.tx.CachedDOMWriteTransaction;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,24 +40,21 @@ public class CachedDOMDataBroker implements DOMDataBroker, DOMDataTreeChangeServ
     private static final Logger LOG = LoggerFactory.getLogger(CachedDOMDataBroker.class);
 
     private final String nodeId;
-    private final SchemaContext schemaContext;
     private final InMemoryDOMDataStore inMemoryDOMDataStore;
     private final Executor clientFutureCallbackExecutor;
 
     public CachedDOMDataBroker(final String nodeId,
-                               final SchemaContext schemaContext,
                                final InMemoryDOMDataStore inMemoryDOMDataStore,
                                final Executor clientFutureCallbackExecutor) {
-        LOG.info("{}: Create CachedDOMDataBroker instance for schemaContext={}", nodeId, schemaContext);
+        LOG.info("{}: Create CachedDOMDataBroker instance", nodeId);
         this.nodeId = nodeId;
-        this.schemaContext = schemaContext;
         this.inMemoryDOMDataStore = inMemoryDOMDataStore;
         this.clientFutureCallbackExecutor = clientFutureCallbackExecutor;
     }
 
     @Override
     public DOMDataReadOnlyTransaction newReadOnlyTransaction() {
-        return new CachedDOMReadOnlyTransaction(nodeId, schemaContext, inMemoryDOMDataStore.newReadOnlyTransaction());
+        return new CachedDOMReadOnlyTransaction(nodeId, inMemoryDOMDataStore.newReadOnlyTransaction());
     }
 
     @Override
@@ -68,7 +64,7 @@ public class CachedDOMDataBroker implements DOMDataBroker, DOMDataTreeChangeServ
 
     @Override
     public DOMDataWriteTransaction newWriteOnlyTransaction() {
-        return new CachedDOMWriteTransaction(nodeId, schemaContext, inMemoryDOMDataStore.newWriteOnlyTransaction(),
+        return new CachedDOMWriteTransaction(nodeId, inMemoryDOMDataStore.newWriteOnlyTransaction(),
                 clientFutureCallbackExecutor);
     }
 

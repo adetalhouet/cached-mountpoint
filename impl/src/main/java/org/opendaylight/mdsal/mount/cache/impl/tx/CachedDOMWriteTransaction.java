@@ -28,7 +28,6 @@ import org.opendaylight.yangtools.util.concurrent.MappingCheckedFuture;
 import org.opendaylight.yangtools.yang.common.RpcResult;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * Created by adetalhouet on 2017-02-02.
  */
 // FIXME partial duplicated code from ConcurrentDOMDataBroker
-public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction implements DOMDataWriteTransaction {
+public class CachedDOMWriteTransaction implements DOMDataWriteTransaction {
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedDOMWriteTransaction.class);
 
@@ -46,13 +45,13 @@ public class CachedDOMWriteTransaction extends CachedAbstractWriteTransaction im
 
     private final Executor clientFutureCallbackExecutor;
 
+    private final String nodeId;
     private final DOMStoreWriteTransaction writeTransaction;
 
     public CachedDOMWriteTransaction(final String nodeId,
-                              final SchemaContext schemaContext,
-                              final DOMStoreWriteTransaction writeTransaction,
-                              final Executor clientFutureCallbackExecutor) {
-        super(nodeId, schemaContext);
+                                     final DOMStoreWriteTransaction writeTransaction,
+                                     final Executor clientFutureCallbackExecutor) {
+        this.nodeId = nodeId;
         this.clientFutureCallbackExecutor = clientFutureCallbackExecutor;
         this.writeTransaction = writeTransaction;
     }

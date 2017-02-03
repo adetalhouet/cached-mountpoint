@@ -20,23 +20,22 @@ import org.opendaylight.controller.md.sal.dom.api.DOMDataReadOnlyTransaction;
 import org.opendaylight.controller.sal.core.spi.data.DOMStoreReadTransaction;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
 import org.opendaylight.yangtools.yang.data.api.schema.NormalizedNode;
-import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Created by adetalhouet on 2017-02-02.
  */
-public class CachedDOMReadOnlyTransaction extends CachedAbstractWriteTransaction implements DOMDataReadOnlyTransaction {
+public class CachedDOMReadOnlyTransaction implements DOMDataReadOnlyTransaction {
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedDOMReadOnlyTransaction.class);
 
+    private final String nodeId;
     private final DOMStoreReadTransaction readTransaction;
 
     public CachedDOMReadOnlyTransaction(final String nodeId,
-                                 final SchemaContext schemaContext,
-                                 final DOMStoreReadTransaction readTransaction) {
-        super(nodeId, schemaContext);
+                                        final DOMStoreReadTransaction readTransaction) {
+        this.nodeId = nodeId;
         this.readTransaction = Preconditions.checkNotNull(readTransaction);
     }
 

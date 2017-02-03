@@ -136,7 +136,7 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
             final YangInstanceIdentifier rootNode = mountPointPath(nodeId);
             final InMemoryDOMDataStore inMemoryDOMDataStore = InMemoryDOMDataStoreFactory.newInstance(rootNode,
                     schemaContext, LogicalDatastoreType.CONFIGURATION);
-            final CachedDOMDataBroker domDataBroker = new CachedDOMDataBroker(nodeId, schemaContext, inMemoryDOMDataStore,
+            final CachedDOMDataBroker domDataBroker = new CachedDOMDataBroker(nodeId, inMemoryDOMDataStore,
                     CLIENT_FUTURE_CALLBACK_EXECUTOR);
 
             // Looks like one can't register a DTCL on mount point with current backend implementation

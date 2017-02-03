@@ -34,7 +34,7 @@ public class CachedDOMReadWriteTransaction implements DOMDataReadWriteTransactio
     private DOMDataWriteTransaction writeTransaction;
 
     public CachedDOMReadWriteTransaction(final DOMDataReadOnlyTransaction readTransaction,
-                                  final DOMDataWriteTransaction writeTransaction) {
+                                         final DOMDataWriteTransaction writeTransaction) {
         this.readTransaction = readTransaction;
         this.writeTransaction = writeTransaction;
     }
