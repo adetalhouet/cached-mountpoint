@@ -11,7 +11,6 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -25,6 +24,7 @@ import org.opendaylight.controller.md.sal.binding.api.DataTreeModification;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataBroker;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataChangeListener;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeIdentifier;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPoint;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPointService;
@@ -40,6 +40,7 @@ import org.opendaylight.yangtools.concepts.ObjectRegistration;
 import org.opendaylight.yangtools.util.concurrent.SpecialExecutors;
 import org.opendaylight.yangtools.yang.common.QName;
 import org.opendaylight.yangtools.yang.data.api.YangInstanceIdentifier;
+import org.opendaylight.yangtools.yang.model.api.ContainerSchemaNode;
 import org.opendaylight.yangtools.yang.model.api.SchemaContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,16 +142,15 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
             final CachedDOMDataBroker domDataBroker = new CachedDOMDataBroker(nodeId, inMemoryDOMDataStore,
                     CLIENT_FUTURE_CALLBACK_EXECUTOR);
 
-            // Looks like one can't register a DTCL on mount point with current backend implementation
-//            final Collection<ListenerRegistration<CachedDOMDataTreeChangeListener>> regs =
-//                    registerDataTreeChangeListener(nodeId, cachedSchemaRepository.qNames(), domDataBroker);
+            final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations =
+                    registerDataTreeChangeListener(nodeId, cachedSchemaRepository, domDataBroker);
 
             final DOMMountPointService.DOMMountPointBuilder cachedMountPointBuilder = service.createMountPoint(rootNode);
             cachedMountPointBuilder.addService(DOMDataBroker.class, domDataBroker);
             cachedMountPointBuilder.addInitialSchemaContext(schemaContext);
-            final ObjectRegistration<DOMMountPoint> reg = cachedMountPointBuilder.register();
+            final ObjectRegistration<DOMMountPoint> mountPointReg = cachedMountPointBuilder.register();
 
-            final CachedMountPointId mountPointId = new CachedMountPointId(nodeId, cachedSchemaRepository, inMemoryDOMDataStore, reg);
+            final CachedMountPointId mountPointId = new CachedMountPointId(mountPointReg, listenerRegistrations);
             cachedMountPoints.put(nodeId, mountPointId);
         } else {
             LOG.warn("{}: Mount point already exist", nodeId);
@@ -171,17 +171,23 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
         return codec.toYangInstanceIdentifier(TopologyHelper.CACHED_MOUNT_POINT_TOPOLOGY.child(Node.class, nodeKey));
     }
 
-    private Collection<ListenerRegistration<CachedDOMDataTreeChangeListener>> registerDataTreeChangeListener(final String nodeId,
-                                                                                                             final List<QName> qNames,
-                                                                                                             final CachedDOMDataBroker domDataBroker) {
-        final Collection<ListenerRegistration<CachedDOMDataTreeChangeListener>> regs = Lists.newArrayList();
-        final Collection<YangInstanceIdentifier> yiids = Lists.newArrayList();
-        qNames.forEach(q -> yiids.add(fromQnameToYiid.apply(q)));
+    private Collection<ListenerRegistration<DOMDataChangeListener>> registerDataTreeChangeListener(final String nodeId,
+                                                                                                   final CachedSchemaRepository cachedSchemaRepository,
+                                                                                                   final CachedDOMDataBroker domDataBroker) {
+        final Collection<ListenerRegistration<DOMDataChangeListener>> regs = Lists.newArrayList();
 
-        yiids.forEach(qName -> {
-            LOG.info("{}: Registering DTCL for path={}", nodeId, qName);
-            final DOMDataTreeIdentifier id = new DOMDataTreeIdentifier(LogicalDatastoreType.CONFIGURATION, qName);
-            regs.add(domDataBroker.registerDataTreeChangeListener(id, new CachedDOMDataTreeChangeListener()));
+        cachedSchemaRepository.qNames().forEach(qName -> {
+            cachedSchemaRepository.getSchemaContext().findModuleByNamespace(qName.getNamespace()).forEach(module -> {
+                module.getChildNodes().forEach(childNode -> {
+                    // TODO Register listener for lists and other type of DataSchemaNode
+                    if (ContainerSchemaNode.class.isAssignableFrom(childNode.getClass())) {
+                        YangInstanceIdentifier yangInstanceIdentifier = fromQnameToYiid.apply(QName.create(qName, childNode.getQName().getLocalName()));
+                        LOG.info("{}: Registering DTCL for ContainerSchemaNode={}", nodeId, yangInstanceIdentifier);
+                        DOMDataTreeIdentifier dataTreeIdentifier = new DOMDataTreeIdentifier(LogicalDatastoreType.CONFIGURATION, yangInstanceIdentifier);
+                        domDataBroker.registerDataTreeChangeListener(dataTreeIdentifier, new CachedDOMDataTreeChangeListener());
+                    }
+                });
+            });
         });
         return regs;
     }
@@ -190,7 +196,8 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
         final CachedMountPointId cachedMountPoint = cachedMountPoints.get(nodeId);
         if (cachedMountPoint != null) {
             try {
-                cachedMountPoint.getRegistration().close();
+                cachedMountPoint.close();
+                cachedMountPoints.remove(nodeId);
             } catch (Exception e) {
                 LOG.error("{}: Failed to close mount point", nodeId);
             }

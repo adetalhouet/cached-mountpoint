@@ -69,6 +69,7 @@ public class CachedDOMDataBroker implements DOMDataBroker, DOMDataTreeChangeServ
     }
 
     @Override
+    @Deprecated
     public ListenerRegistration<DOMDataChangeListener> registerDataChangeListener(
             final LogicalDatastoreType store, final YangInstanceIdentifier path, final DOMDataChangeListener listener,
             final DataChangeScope triggeringScope) {

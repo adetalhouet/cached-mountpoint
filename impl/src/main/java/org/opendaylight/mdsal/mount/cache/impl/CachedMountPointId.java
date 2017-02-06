@@ -7,43 +7,34 @@
  */
 package org.opendaylight.mdsal.mount.cache.impl;
 
+import java.util.Collection;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataChangeListener;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPoint;
-import org.opendaylight.controller.md.sal.dom.store.impl.InMemoryDOMDataStore;
+import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.concepts.ObjectRegistration;
 
 /**
  * Created by adetalhouet on 2017-02-03.
  */
-public class CachedMountPointId {
+public class CachedMountPointId implements AutoCloseable {
 
-    private final String id;
-    private final CachedSchemaRepository schemaRepository;
-    private final InMemoryDOMDataStore inMemoryDOMDataStore;
-    private final ObjectRegistration<DOMMountPoint> registration;
+    private final ObjectRegistration<DOMMountPoint> mountPointReg;
+    private final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations;
 
-    CachedMountPointId(final String id,
-                       final CachedSchemaRepository schemaRepository,
-                       final InMemoryDOMDataStore inMemoryDOMDataStore,
-                       final ObjectRegistration<DOMMountPoint> registration) {
-        this.id = id;
-        this.schemaRepository = schemaRepository;
-        this.inMemoryDOMDataStore = inMemoryDOMDataStore;
-        this.registration = registration;
+    CachedMountPointId(final ObjectRegistration<DOMMountPoint> registration,
+                       final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations) {
+
+        this.mountPointReg = registration;
+        this.listenerRegistrations = listenerRegistrations;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public CachedSchemaRepository getSchemaRepository() {
-        return schemaRepository;
-    }
-
-    public InMemoryDOMDataStore getInMemoryDOMDataStore() {
-        return inMemoryDOMDataStore;
-    }
-
-    public ObjectRegistration<DOMMountPoint> getRegistration() {
-        return registration;
+    @Override
+    public void close() throws Exception {
+        if (mountPointReg != null) {
+            mountPointReg.close();
+        }
+        if (listenerRegistrations != null && !listenerRegistrations.isEmpty()) {
+            listenerRegistrations.forEach(ListenerRegistration::close);
+        }
     }
 }
