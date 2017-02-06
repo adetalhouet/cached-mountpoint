@@ -24,7 +24,7 @@ import org.opendaylight.controller.md.sal.binding.api.DataTreeModification;
 import org.opendaylight.controller.md.sal.binding.api.WriteTransaction;
 import org.opendaylight.controller.md.sal.common.api.data.LogicalDatastoreType;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataBroker;
-import org.opendaylight.controller.md.sal.dom.api.DOMDataChangeListener;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeChangeListener;
 import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeIdentifier;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPoint;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPointService;
@@ -142,7 +142,7 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
             final CachedDOMDataBroker domDataBroker = new CachedDOMDataBroker(nodeId, inMemoryDOMDataStore,
                     CLIENT_FUTURE_CALLBACK_EXECUTOR);
 
-            final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations =
+            final Collection<ListenerRegistration<DOMDataTreeChangeListener>> listenerRegistrations =
                     registerDataTreeChangeListener(nodeId, cachedSchemaRepository, domDataBroker);
 
             final DOMMountPointService.DOMMountPointBuilder cachedMountPointBuilder = service.createMountPoint(rootNode);
@@ -171,10 +171,10 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
         return codec.toYangInstanceIdentifier(TopologyHelper.CACHED_MOUNT_POINT_TOPOLOGY.child(Node.class, nodeKey));
     }
 
-    private Collection<ListenerRegistration<DOMDataChangeListener>> registerDataTreeChangeListener(final String nodeId,
-                                                                                                   final CachedSchemaRepository cachedSchemaRepository,
-                                                                                                   final CachedDOMDataBroker domDataBroker) {
-        final Collection<ListenerRegistration<DOMDataChangeListener>> regs = Lists.newArrayList();
+    private Collection<ListenerRegistration<DOMDataTreeChangeListener>> registerDataTreeChangeListener(final String nodeId,
+                                                                                                       final CachedSchemaRepository cachedSchemaRepository,
+                                                                                                       final CachedDOMDataBroker domDataBroker) {
+        final Collection<ListenerRegistration<DOMDataTreeChangeListener>> regs = Lists.newArrayList();
 
         cachedSchemaRepository.qNames().forEach(qName -> {
             cachedSchemaRepository.getSchemaContext().findModuleByNamespace(qName.getNamespace()).forEach(module -> {
@@ -184,7 +184,7 @@ public class CachedMountPointTopology implements DataTreeChangeListener<Node> {
                         YangInstanceIdentifier yangInstanceIdentifier = fromQnameToYiid.apply(QName.create(qName, childNode.getQName().getLocalName()));
                         LOG.info("{}: Registering DTCL for ContainerSchemaNode={}", nodeId, yangInstanceIdentifier);
                         DOMDataTreeIdentifier dataTreeIdentifier = new DOMDataTreeIdentifier(LogicalDatastoreType.CONFIGURATION, yangInstanceIdentifier);
-                        domDataBroker.registerDataTreeChangeListener(dataTreeIdentifier, new CachedDOMDataTreeChangeListener());
+                        regs.add(domDataBroker.registerDataTreeChangeListener(dataTreeIdentifier, new CachedDOMDataTreeChangeListener()));
                     }
                 });
             });

@@ -8,7 +8,7 @@
 package org.opendaylight.mdsal.mount.cache.impl;
 
 import java.util.Collection;
-import org.opendaylight.controller.md.sal.dom.api.DOMDataChangeListener;
+import org.opendaylight.controller.md.sal.dom.api.DOMDataTreeChangeListener;
 import org.opendaylight.controller.md.sal.dom.api.DOMMountPoint;
 import org.opendaylight.yangtools.concepts.ListenerRegistration;
 import org.opendaylight.yangtools.concepts.ObjectRegistration;
@@ -19,10 +19,10 @@ import org.opendaylight.yangtools.concepts.ObjectRegistration;
 public class CachedMountPointId implements AutoCloseable {
 
     private final ObjectRegistration<DOMMountPoint> mountPointReg;
-    private final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations;
+    private final Collection<ListenerRegistration<DOMDataTreeChangeListener>> listenerRegistrations;
 
     CachedMountPointId(final ObjectRegistration<DOMMountPoint> registration,
-                       final Collection<ListenerRegistration<DOMDataChangeListener>> listenerRegistrations) {
+                       final Collection<ListenerRegistration<DOMDataTreeChangeListener>> listenerRegistrations) {
 
         this.mountPointReg = registration;
         this.listenerRegistrations = listenerRegistrations;
