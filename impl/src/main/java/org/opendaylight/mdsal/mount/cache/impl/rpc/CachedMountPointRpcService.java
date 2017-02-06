@@ -1,4 +1,4 @@
-package org.opendaylight.mdsal.mount.cache.impl;
+package org.opendaylight.mdsal.mount.cache.impl.rpc;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
+import org.opendaylight.mdsal.mount.cache.impl.CachedSchemaRepository;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.cached.mount.point.rev170201.CachedMountPointService;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.cached.mount.point.rev170201.LoadModelsInput;
 import org.opendaylight.yang.gen.v1.urn.opendaylight.params.xml.ns.yang.cached.mount.point.rev170201.LoadModelsOutput;

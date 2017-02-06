@@ -55,6 +55,10 @@ module cached-mount-point {
                 description "The full path to the folder containing the models, or the full path to the model itself
                              if there is only one to load.";
             }
+            lead overwrite {
+                type boolean;
+                description "Whether or not to overwrite if the folder already exist.";
+            }
             uses cached-mount-point-schema-storage;
         }
         output {
