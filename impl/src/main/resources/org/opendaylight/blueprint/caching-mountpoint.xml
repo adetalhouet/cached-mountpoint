@@ -25,7 +25,7 @@
         <argument ref="conversionCodec"/>
     </bean>
 
-    <bean id="cachedMountPointService" class="org.opendaylight.mdsal.mount.cache.impl.CachedMountPointRpcService"/>
+    <bean id="cachedMountPointService" class="org.opendaylight.mdsal.mount.cache.impl.rpc.CachedMountPointRpcService"/>
     <odl:rpc-implementation ref="cachedMountPointService"/>
 
 </blueprint>

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import org.opendaylight.mdsal.mount.cache.impl.CachedSchemaRepository;
@@ -26,10 +27,10 @@ public class CachedMountPointRpcService implements CachedMountPointService {
     @Override
     public Future<RpcResult<LoadModelsOutput>> loadModels(LoadModelsInput input) {
         final Path outputFolder = Paths.get(CachedSchemaRepository.DEFAULT_CACHED_MOUNT_POINT_DIRECTORY, input.getSchemaCacheDirectory());
-        if (Files.exists(outputFolder)) {
-            LOG.debug("Folder already exist {}", outputFolder.toString());
+        if (Files.exists(outputFolder) && !input.isOverwrite()) {
+            LOG.debug("Folder already exist {}. If you want to overwrite files, please specify in the request.", outputFolder.toString());
             return handleResponse(LoadModelsOutput.Status.ALREADYEXIST);
-        } else {
+        } else if (!Files.exists(outputFolder)) {
             try {
                 Files.createDirectories(outputFolder);
             } catch (IOException e) {
@@ -43,7 +44,7 @@ public class CachedMountPointRpcService implements CachedMountPointService {
                 Stream<Path> files = Files.list(models);
                 files.forEach(f -> {
                     try {
-                        Files.copy(f, outputFolder.resolve(f.getFileName()));
+                        Files.copy(f, outputFolder.resolve(f.getFileName()), StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         LOG.error("Failed to copy file={} to folder={}", f, outputFolder, e);
                     }

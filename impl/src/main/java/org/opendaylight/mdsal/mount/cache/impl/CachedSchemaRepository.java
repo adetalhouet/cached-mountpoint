@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by adetalhouet on 2017-02-02.
  */
-class CachedSchemaRepository {
+public class CachedSchemaRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(CachedSchemaRepository.class);
 
